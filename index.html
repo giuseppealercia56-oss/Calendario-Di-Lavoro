@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#eef1f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1522" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Turni">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+[hidden] { display: none !important; }
+</style>
+<title>Calendario Turni</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one-column month calendar like a phone calendar app; tapping a day opens a bottom sheet to set shift and rate the day. */
+:root {
+  --bg: #eef1f6;
+  --surface: #ffffff;
+  --ink: #141c2b;
+  --muted: #667085;
+  --line: #d9dfe9;
+  --accent: #2b4fd8;
+  --on-accent: #ffffff;
+  --mat-bg: #fdecc8;
+  --mat-fg: #7a4a00;
+  --pom-bg: #dfe5fd;
+  --pom-fg: #2338a6;
+  --rest-bg: #e8ecf3;
+  --ot-bg: #ffe1cf;
+  --ot-fg: #8a3a00;
+  --low-bg: #fbdcd9;
+  --low-fg: #a3261b;
+  --mid-bg: #fdecc8;
+  --mid-fg: #7a4a00;
+  --high-bg: #d3f0dc;
+  --high-fg: #166534;
+  --bar-low: #e5564a;
+  --bar-mid: #e8a23a;
+  --bar-high: #2fa35c;
+  --shadow: 0 -8px 40px rgba(20, 28, 43, 0.22);
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1522;
+    --surface: #182033;
+    --ink: #e9edf6;
+    --muted: #93a0b8;
+    --line: #2a3550;
+    --accent: #7f9bff;
+    --on-accent: #0f1522;
+    --mat-bg: #4a3510;
+    --mat-fg: #f6c97a;
+    --pom-bg: #26346f;
+    --pom-fg: #b9c6ff;
+    --rest-bg: #202a40;
+    --ot-bg: #5c2f14;
+    --ot-fg: #ffc59e;
+    --low-bg: #5a2420;
+    --low-fg: #ffb4ac;
+    --mid-bg: #4a3510;
+    --mid-fg: #f6c97a;
+    --high-bg: #174a2c;
+    --high-fg: #a5e8bd;
+    --bar-low: #ef7468;
+    --bar-mid: #eeb25a;
+    --bar-high: #4cc57c;
+    --shadow: 0 -8px 40px rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1522;
+  --surface: #182033;
+  --ink: #e9edf6;
+  --muted: #93a0b8;
+  --line: #2a3550;
+  --accent: #7f9bff;
+  --on-accent: #0f1522;
+  --mat-bg: #4a3510;
+  --mat-fg: #f6c97a;
+  --pom-bg: #26346f;
+  --pom-fg: #b9c6ff;
+  --rest-bg: #202a40;
+  --ot-bg: #5c2f14;
+  --ot-fg: #ffc59e;
+  --low-bg: #5a2420;
+  --low-fg: #ffb4ac;
+  --mid-bg: #4a3510;
+  --mid-fg: #f6c97a;
+  --high-bg: #174a2c;
+  --high-fg: #a5e8bd;
+  --bar-low: #ef7468;
+  --bar-mid: #eeb25a;
+  --bar-high: #4cc57c;
+  --shadow: 0 -8px 40px rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.4;
+  padding-block: 18px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.app { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.month { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 32px; line-height: 1; letter-spacing: -0.02em; text-transform: capitalize; text-wrap: balance; }
+.month small { display: block; font-family: var(--font-body); font-weight: 600; font-size: 13px; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px; }
+.nav { display: flex; gap: 6px; }
+.nav button { height: 38px; min-width: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-weight: 600; }
+.nav .today { color: var(--accent); }
+
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 8px; min-width: 0; }
+.stat span { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.stat b { font-family: var(--font-display); font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.wd, .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.wd span { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding-block: 2px; }
+.wd span:nth-child(n+6) { opacity: 0.7; }
+
+.day { min-height: 98px; padding: 6px 4px 5px; display: flex; flex-direction: column; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); text-align: center; }
+.day.rest { background: transparent; }
+.day.blank { border: 0; background: transparent; pointer-events: none; }
+.day .n { font-size: 14px; font-weight: 700; width: 24px; height: 24px; line-height: 24px; border-radius: 50%; font-variant-numeric: tabular-nums; }
+.day.today { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.day.today .n { background: var(--accent); color: var(--on-accent); }
+.day.sel { border-color: var(--ink); }
+.pill { font-size: 10.5px; font-weight: 700; padding: 2px 5px; border-radius: 6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pill.M { background: var(--mat-bg); color: var(--mat-fg); }
+.pill.P { background: var(--pom-bg); color: var(--pom-fg); }
+.pill.R { background: transparent; color: var(--muted); font-weight: 500; }
+.pill.X { background: var(--ot-bg); color: var(--ot-fg); }
+.bot { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.ot { font-size: 11px; font-weight: 700; padding: 1px 5px; border-radius: 6px; background: var(--ot-bg); color: var(--ot-fg); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.score { font-size: 12px; font-weight: 700; padding: 1px 6px; border-radius: 6px; font-variant-numeric: tabular-nums; }
+.score.low { background: var(--low-bg); color: var(--low-fg); }
+.score.mid { background: var(--mid-bg); color: var(--mid-fg); }
+.score.high { background: var(--high-bg); color: var(--high-fg); }
+.score.part { background: var(--rest-bg); color: var(--muted); font-weight: 600; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 12.5px; color: var(--muted); align-items: center; }
+.legend i { font-style: normal; display: inline-flex; align-items: center; gap: 6px; }
+.rules { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
+.rules b { color: var(--ink); font-weight: 600; }
+.hint { margin: 0; font-size: 13px; color: var(--muted); }
+
+.backdrop { position: fixed; inset: 0; background: rgba(10, 14, 24, 0.45); z-index: 20; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; margin-inline: auto; max-width: 520px; max-height: 88%; overflow-y: auto; background: var(--surface); border-radius: 18px 18px 0 0; box-shadow: var(--shadow); padding-top: 18px; padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 14px; }
+@media (prefers-reduced-motion: no-preference) { .sheet { animation: up 0.18s ease-out; } }
+@keyframes up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+.sheet-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.sheet h2 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 24px; letter-spacing: -0.01em; }
+.close { height: 36px; width: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg); font-size: 18px; line-height: 1; }
+.sec h3 { margin: 0 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.opts { display: grid; gap: 6px; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+.opt { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); text-align: left; }
+.opt b { font-weight: 600; }
+.opt small { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.opt[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.opt[aria-pressed="true"] small { color: var(--on-accent); opacity: 0.85; }
+.step { display: flex; align-items: center; gap: 10px; }
+.stepbtn { height: 46px; width: 54px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); font-size: 24px; line-height: 1; font-weight: 600; flex: none; }
+.stepval { flex: 1; min-width: 0; text-align: center; display: flex; flex-direction: column; }
+.stepval b { font-family: var(--font-display); font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.stepval small { color: var(--muted); font-size: 12.5px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip { padding: 6px 12px; border-radius: 16px; border: 1px solid var(--line); background: var(--bg); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] { background: var(--ot-bg); color: var(--ot-fg); border-color: var(--ot-fg); }
+.total { display: grid; gap: 6px; }
+.total-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.total-n { font-family: var(--font-display); font-weight: 800; font-size: 44px; line-height: 1; font-variant-numeric: tabular-nums; }
+.total-n small { font-family: var(--font-body); font-size: 15px; font-weight: 600; color: var(--muted); }
+.total-note { font-size: 13px; color: var(--muted); text-align: right; }
+.bar { height: 8px; border-radius: 4px; background: var(--rest-bg); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 4px; background: var(--bar-mid); }
+.bar i.low { background: var(--bar-low); }
+.bar i.high { background: var(--bar-high); }
+.actions { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.link { background: none; border: 0; color: var(--muted); text-decoration: underline; padding: 6px 0; font-size: 13px; }
+.status { font-size: 13px; color: var(--low-fg); min-height: 1em; }
+</style>
+
+</head>
+<body>
+<div class="app">
+  <div class="head">
+    <h1 class="month" id="monthTitle"></h1>
+    <div class="nav">
+      <button id="prev" type="button" aria-label="Mese precedente">‹</button>
+      <button id="today" class="today" type="button">Oggi</button>
+      <button id="next" type="button" aria-label="Mese successivo">›</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><span>Valutati</span><b id="stN">0</b></div>
+    <div class="stat"><span>Media</span><b id="stAvg">–</b></div>
+    <div class="stat"><span>Migliore</span><b id="stMax">–</b></div>
+    <div class="stat"><span>Extra</span><b id="stOt">0 h</b></div>
+  </div>
+
+  <div>
+    <div class="wd" aria-hidden="true"><span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span></div>
+  </div>
+  <div class="grid" id="grid"></div>
+
+  <p class="hint" id="hint">Tocca un giorno per valutarlo o cambiare il turno.</p>
+
+  <div class="legend">
+    <i><span class="pill M">6–14</span> Mattina</i>
+    <i><span class="pill P">14–22</span> Pomeriggio</i>
+    <i><span class="pill R">Riposo</span></i>
+    <i><span class="ot">+2h</span> Straordinario</i>
+  </div>
+  <div class="rules" id="rules"></div>
+</div>
+
+<div class="backdrop" id="backdrop" hidden></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden></div>
+
+<script>
+(function () {
+  var MESI = ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+  var GIORNI = ["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"];
+  var G = [["male","Male",10],["indifferente","Indifferente",25],["bene","Bene",45],["eccezionale","Eccezionale",60]];
+  var V = [["lenta","Lenta",10],["media","Media",25],["veloce","Veloce",40]];
+  var TURNI = [["M","Mattina","6–14"],["P","Pomeriggio","14–22"],["R","Riposo",""]];
+  function pts(list, key) { for (var i = 0; i < list.length; i++) if (list[i][0] === key) return list[i][2]; return null; }
+
+  // Turni alternati a settimane: la settimana di lunedì 26/10/2026 è il pomeriggio, la successiva la mattina, e così via. Sabato e domenica riposo.
+  function dayNum(y, m, d) { return Math.floor(Date.UTC(y, m, d) / 86400000); }
+  var BASE = dayNum(2026, 9, 26);
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function iso(y, m, d) { return y + "-" + pad(m + 1) + "-" + pad(d); }
+  function dow(y, m, d) { return (new Date(y, m, d).getDay() + 6) % 7; } // 0 = lunedì
+  function defaultShift(y, m, d) {
+    if (dow(y, m, d) >= 5) return "R";
+    var week = Math.floor((dayNum(y, m, d) - BASE) / 7);
+    return week % 2 === 0 ? "P" : "M";
+  }
+  function shiftOf(y, m, d, rec) { return (rec && rec.t) || defaultShift(y, m, d); }
+  function fmt(n) { return String(n).replace(".", ","); }
+  function hhmm(x) { x = x % 24; var h = Math.floor(x), mi = Math.round((x - h) * 60); return pad(h) + ":" + pad(mi); }
+  function band(t) { return t >= 70 ? "high" : t >= 40 ? "mid" : "low"; }
+  function total(rec) {
+    if (!rec || !rec.g || !rec.v) return null;
+    var a = pts(G, rec.g), b = pts(V, rec.v);
+    return a == null || b == null ? null : a + b;
+  }
+
+  var now = new Date();
+  var view = { y: now.getFullYear(), m: now.getMonth() };
+  var sel = null;
+  var data = {};
+  var db = null;
+  var LS = "calendario-turni-giorni";
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function loadLocal() {
+    try { var s = localStorage.getItem(LS); if (s) data = JSON.parse(s) || {}; } catch (e) {}
+  }
+  function saveLocal() {
+    try { localStorage.setItem(LS, JSON.stringify(data)); } catch (e) {}
+  }
+
+  // ---------- render del mese ----------
+  function render() {
+    $("monthTitle").innerHTML = "<small>" + view.y + "</small>" + MESI[view.m];
+    var first = dow(view.y, view.m, 1);
+    var count = new Date(view.y, view.m + 1, 0).getDate();
+    var html = "";
+    var i;
+    for (i = 0; i < first; i++) html += '<div class="day blank"></div>';
+    var rated = 0, sum = 0, best = null, otSum = 0;
+    for (var d = 1; d <= count; d++) {
+      var key = iso(view.y, view.m, d);
+      var rec = data[key];
+      var t = shiftOf(view.y, view.m, d, rec);
+      var tot = total(rec);
+      var ot = rec && rec.o ? rec.o : 0;
+      otSum += ot;
+      if (tot != null) { rated++; sum += tot; if (best == null || tot > best) best = tot; }
+      var isToday = view.y === now.getFullYear() && view.m === now.getMonth() && d === now.getDate();
+      var cls = "day" + (t === "R" ? " rest" : "") + (isToday ? " today" : "") + (sel === key ? " sel" : "");
+      var label = t === "M" ? "6–14" : t === "P" ? "14–22" : "Riposo";
+      var badge = "";
+      if (ot > 0) badge += '<span class="ot">+' + fmt(ot) + "h</span>";
+      if (tot != null) badge += '<span class="score ' + band(tot) + '">' + tot + "</span>";
+      else if (rec && (rec.g || rec.v)) badge += '<span class="score part">…</span>';
+      if (badge) badge = '<span class="bot">' + badge + "</span>";
+      var pillCls = t === "R" && ot > 0 ? "X" : t;
+      var pillTxt = t === "R" ? (ot > 0 ? "Extra" : "–") : label;
+      html += '<button type="button" class="' + cls + '" data-d="' + key + '" aria-label="' + d + " " + MESI[view.m] + ", " + label + (ot > 0 ? ", straordinario " + fmt(ot) + " ore" : "") + (tot != null ? ", punteggio " + tot : "") + '">' +
+        '<span class="n">' + d + '</span><span class="pill ' + pillCls + '">' + pillTxt + "</span>" + badge + "</button>";
+    }
+    $("grid").innerHTML = html;
+    $("stN").textContent = rated;
+    $("stAvg").textContent = rated ? (Math.round(sum / rated * 10) / 10).toString().replace(".", ",") : "–";
+    $("stMax").textContent = best == null ? "–" : best;
+    $("stOt").textContent = fmt(otSum) + " h";
+    $("hint").hidden = rated > 0 || otSum > 0;
+  }
+
+  // ---------- scheda del giorno ----------
+  function renderSheet() {
+    if (!sel) return;
+    var p = sel.split("-").map(Number), y = p[0], m = p[1] - 1, d = p[2];
+    var rec = data[sel] || {};
+    var cur = shiftOf(y, m, d, rec);
+    var tot = total(rec);
+    var wd = GIORNI[new Date(y, m, d).getDay()];
+    var h = '<div class="sheet-top"><h2 id="sheetTitle">' + wd + " " + d + " " + MESI[m] + '</h2><button type="button" class="close" id="close" aria-label="Chiudi">×</button></div>';
+    h += '<div class="sec"><h3>Turno</h3><div class="opts">';
+    TURNI.forEach(function (x) {
+      h += '<button type="button" class="opt" data-k="t" data-v="' + x[0] + '" aria-pressed="' + (cur === x[0]) + '"><b>' + x[1] + "</b><small>" + (x[2] || "giorno libero") + "</small></button>";
+    });
+    h += "</div></div>";
+    var o = rec.o || 0;
+    var onote = o === 0 ? "Nessuno" : cur === "R" ? "Giorno di riposo lavorato" : "Esci alle " + hhmm((cur === "M" ? 14 : 22) + o) + " invece che alle " + hhmm(cur === "M" ? 14 : 22);
+    h += '<div class="sec"><h3>Straordinario</h3><div class="step"><button type="button" class="stepbtn" data-step="-0.5" aria-label="Meno mezz’ora">−</button><div class="stepval"><b>' + fmt(o) + ' h</b><small>' + onote + '</small></div><button type="button" class="stepbtn" data-step="0.5" aria-label="Più mezz’ora">+</button></div><div class="chips">';
+    [1, 2, 3, 4, 8].forEach(function (x) { h += '<button type="button" class="chip" data-set="' + x + '" aria-pressed="' + (o === x) + '">' + x + " h</button>"; });
+    h += "</div></div>";
+    h += '<div class="sec"><h3>Com’è andata</h3><div class="opts">';
+    G.forEach(function (x) {
+      h += '<button type="button" class="opt" data-k="g" data-v="' + x[0] + '" aria-pressed="' + (rec.g === x[0]) + '"><b>' + x[1] + "</b><small>+" + x[2] + " punti</small></button>";
+    });
+    h += "</div></div>";
+    h += '<div class="sec"><h3>Quanto è passata in fretta</h3><div class="opts">';
+    V.forEach(function (x) {
+      h += '<button type="button" class="opt" data-k="v" data-v="' + x[0] + '" aria-pressed="' + (rec.v === x[0]) + '"><b>' + x[1] + "</b><small>+" + x[2] + " punti</small></button>";
+    });
+    h += "</div></div>";
+    var note = tot != null ? "" : (!rec.g && !rec.v ? "Scegli gradimento e velocità" : !rec.g ? "Manca il gradimento" : "Manca la velocità");
+    h += '<div class="total"><div class="total-row"><div class="total-n">' + (tot != null ? tot : "–") + "<small> / 100</small></div><div class=\"total-note\">" + note + "</div></div>";
+    h += '<div class="bar"><i class="' + (tot != null ? band(tot) : "") + '" style="width:' + (tot != null ? tot : 0) + '%"></i></div></div>';
+    h += '<div class="status" id="status" role="status"></div>';
+    h += '<div class="actions"><button type="button" class="link" id="clear">Cancella valutazione</button><button type="button" class="opt" id="done" style="align-items:center;min-width:96px"><b>Fatto</b></button></div>';
+    $("sheet").innerHTML = h;
+  }
+  function openSheet(key) {
+    sel = key;
+    renderSheet();
+    $("backdrop").hidden = false;
+    $("sheet").hidden = false;
+    render();
+    var c = $("close"); if (c) c.focus();
+  }
+  function closeSheet() {
+    sel = null;
+    $("backdrop").hidden = true;
+    $("sheet").hidden = true;
+    render();
+  }
+
+  // ---------- salvataggio ----------
+  var queue = Promise.resolve();
+  function persist(key, rec) {
+    var empty = !rec || (!rec.g && !rec.v && !rec.t && !rec.o);
+    if (empty) delete data[key]; else data[key] = rec;
+    saveLocal();
+    if (!db) return;
+    queue = queue.then(function () {
+      var ref = db.doc("giorni/" + key);
+      return empty ? ref.delete() : ref.set(rec);
+    }).catch(function () {
+      var s = $("status"); if (s) s.textContent = "Salvataggio non riuscito. Riprova.";
+    });
+  }
+  function change(key, k, v) {
+    var rec = Object.assign({}, data[key] || {});
+    if (k === "t") {
+      var p = key.split("-").map(Number);
+      if (v === defaultShift(p[0], p[1] - 1, p[2])) delete rec.t; else rec.t = v;
+    } else {
+      if (rec[k] === v) delete rec[k]; else rec[k] = v;
+    }
+    persist(key, rec);
+    renderSheet();
+    render();
+  }
+
+  function setOt(key, val) {
+    var rec = Object.assign({}, data[key] || {});
+    val = Math.max(0, Math.min(16, Math.round(val * 2) / 2));
+    if (val === 0) delete rec.o; else rec.o = val;
+    persist(key, rec);
+    renderSheet();
+    render();
+  }
+
+  // ---------- eventi ----------
+  $("grid").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-d]");
+    if (b) openSheet(b.getAttribute("data-d"));
+  });
+  $("sheet").addEventListener("click", function (e) {
+    var t = e.target;
+    if (t.closest("#close") || t.closest("#done")) { closeSheet(); return; }
+    if (t.closest("#clear")) {
+      var rec = Object.assign({}, data[sel] || {});
+      delete rec.g; delete rec.v;
+      persist(sel, rec); renderSheet(); render(); return;
+    }
+    var st = t.closest("[data-step]");
+    if (st) { setOt(sel, ((data[sel] || {}).o || 0) + parseFloat(st.getAttribute("data-step"))); return; }
+    var ch = t.closest("[data-set]");
+    if (ch) { var cv = parseFloat(ch.getAttribute("data-set")); setOt(sel, ((data[sel] || {}).o || 0) === cv ? 0 : cv); return; }
+    var o = t.closest(".opt[data-k]");
+    if (o) change(sel, o.getAttribute("data-k"), o.getAttribute("data-v"));
+  });
+  $("backdrop").addEventListener("click", closeSheet);
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && sel) closeSheet(); });
+  $("prev").addEventListener("click", function () { view.m--; if (view.m < 0) { view.m = 11; view.y--; } render(); });
+  $("next").addEventListener("click", function () { view.m++; if (view.m > 11) { view.m = 0; view.y++; } render(); });
+  $("today").addEventListener("click", function () { view = { y: now.getFullYear(), m: now.getMonth() }; render(); });
+
+  var r = "";
+  r += "<div><b>Gradimento</b>: " + G.map(function (x) { return x[1] + " " + x[2]; }).join(" · ") + "</div>";
+  r += "<div><b>Velocità</b>: " + V.map(function (x) { return x[1] + " " + x[2]; }).join(" · ") + "</div>";
+  r += "<div>Punteggio del giorno: da 20 a 100. Gli straordinari si contano a parte e non cambiano il punteggio.</div>";
+  $("rules").innerHTML = r;
+
+  // ---------- avvio ----------
+  loadLocal();
+  render();
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js").catch(function () {}); }
+})();
+</script>
+
+</body>
+</html>
